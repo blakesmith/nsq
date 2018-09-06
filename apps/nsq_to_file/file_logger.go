@@ -89,6 +89,7 @@ func (f *FileLogger) router(r *nsq.Consumer) {
 	closing := false
 	closeFile := false
 	exit := false
+	messageByteSize := make([]byte, 4)
 
 	for {
 		select {
@@ -119,7 +120,6 @@ func (f *FileLogger) router(r *nsq.Consumer) {
 				sync = true
 			}
 			if f.lengthPrefix {
-				messageByteSize := make([]byte, 4)
 				binary.BigEndian.PutUint32(messageByteSize, uint32(len(m.Body)))
 				f.writer.Write(messageByteSize)
 			}
