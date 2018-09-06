@@ -10,7 +10,7 @@ type ConsumerFileLogger struct {
 }
 
 func newConsumerFileLogger(topic string, cfg *nsq.Config) (*ConsumerFileLogger, error) {
-	f, err := NewFileLogger(*gzipEnabled, *gzipLevel, *filenameFormat, topic)
+	f, err := NewFileLogger(*gzipEnabled, *gzipLevel, *filenameFormat, *lengthPrefix, topic)
 	if err != nil {
 		return nil, err
 	}

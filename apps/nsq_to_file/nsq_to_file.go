@@ -31,6 +31,7 @@ var (
 	skipEmptyFiles = flag.Bool("skip-empty-files", false, "Skip writing empty files")
 	topicPollRate  = flag.Duration("topic-refresh", time.Minute, "how frequently the topic list should be refreshed")
 	topicPattern   = flag.String("topic-pattern", "", "Only log topics matching the following pattern")
+	lengthPrefix   = flag.Bool("length-prefix", false, "Write a 4-byte length prefix before each message. Useful for binary message formats. If true, disables newline message delimiters")
 
 	rotateSize     = flag.Int64("rotate-size", 0, "rotate the file when it grows bigger than `rotate-size` bytes")
 	rotateInterval = flag.Duration("rotate-interval", 0*time.Second, "rotate the file every duration")

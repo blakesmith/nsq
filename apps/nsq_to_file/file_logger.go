@@ -2,6 +2,7 @@ package main
 
 import (
 	"compress/gzip"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -23,6 +24,7 @@ type FileLogger struct {
 	compressionLevel int
 	gzipEnabled      bool
 	filenameFormat   string
+	lengthPrefix     bool
 
 	termChan chan bool
 	hupChan  chan bool
@@ -34,7 +36,7 @@ type FileLogger struct {
 	rev          uint
 }
 
-func NewFileLogger(gzipEnabled bool, compressionLevel int, filenameFormat, topic string) (*FileLogger, error) {
+func NewFileLogger(gzipEnabled bool, compressionLevel int, filenameFormat string, lengthPrefix bool, topic string) (*FileLogger, error) {
 	if gzipEnabled || *rotateSize > 0 || *rotateInterval > 0 {
 		if strings.Index(filenameFormat, "<REV>") == -1 {
 			return nil, errors.New("missing <REV> in --filename-format when gzip or rotation enabled")
@@ -66,6 +68,7 @@ func NewFileLogger(gzipEnabled bool, compressionLevel int, filenameFormat, topic
 		compressionLevel: compressionLevel,
 		filenameFormat:   filenameFormat,
 		gzipEnabled:      gzipEnabled,
+		lengthPrefix:     lengthPrefix,
 		termChan:         make(chan bool),
 		hupChan:          make(chan bool),
 	}
@@ -115,13 +118,20 @@ func (f *FileLogger) router(r *nsq.Consumer) {
 				f.updateFile()
 				sync = true
 			}
+			if f.lengthPrefix {
+				messageByteSize := make([]byte, 4)
+				binary.BigEndian.PutUint32(messageByteSize, uint32(len(m.Body)))
+				f.writer.Write(messageByteSize)
+			}
 			_, err := f.writer.Write(m.Body)
 			if err != nil {
 				log.Fatalf("ERROR: writing message to disk - %s", err)
 			}
-			_, err = f.writer.Write([]byte("\n"))
-			if err != nil {
-				log.Fatalf("ERROR: writing newline to disk - %s", err)
+			if !f.lengthPrefix {
+				_, err = f.writer.Write([]byte("\n"))
+				if err != nil {
+					log.Fatalf("ERROR: writing newline to disk - %s", err)
+				}
 			}
 			output[pos] = m
 			pos++
