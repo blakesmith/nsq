@@ -78,7 +78,7 @@ func (a *State) IsExpired() bool {
 }
 
 func QueryAnyAuthd(authd []string, remoteIP string, tlsEnabled bool, commonName string, authSecret string,
-	connectTimeout time.Duration, requestTimeout time.Duration) (*State, error) {
+	connectTimeout time.Duration, requestTimeout time.Duration, failClosed bool) (*State, error) {
 	start := rand.Int()
 	n := len(authd)
 	for i := 0; i < n; i++ {
@@ -90,7 +90,27 @@ func QueryAnyAuthd(authd []string, remoteIP string, tlsEnabled bool, commonName 
 		}
 		return authState, nil
 	}
-	return nil, errors.New("Unable to access auth server")
+
+	if failClosed {
+		log.Printf("Unable to access an auth server, failing closed and allowing all authorizations")
+		ttl := 360
+		closedAuthorizations := []Authorization{
+			{
+				Topic:       ".*",
+				Channels:    []string{".*"},
+				Permissions: []string{"publish", "subscribe"},
+			},
+		}
+		return &State{
+			TTL:            ttl,
+			Authorizations: closedAuthorizations,
+			Identity:       "CLOSED",
+			IdentityURL:    "CLOSED_URL",
+			Expires:        time.Now().Add(time.Duration(ttl) * time.Second),
+		}, nil
+	} else {
+		return nil, errors.New("Unable to access auth server")
+	}
 }
 
 func QueryAuthd(authd string, remoteIP string, tlsEnabled bool, commonName string, authSecret string,
