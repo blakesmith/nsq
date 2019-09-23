@@ -567,11 +567,17 @@ func (c *clientV2) QueryAuthd() error {
 		}
 	}
 
+	authConfig := auth.AuthConfig{
+		ConnectTimeout:         c.ctx.nsqd.getOpts().HTTPClientConnectTimeout,
+		RequestTimeout:         c.ctx.nsqd.getOpts().HTTPClientRequestTimeout,
+		FailClosed:             c.ctx.nsqd.getOpts().AuthFailClosed,
+		FailDefaultTTL:         360,
+		FailDefaultIdentity:    "CLOSED",
+		FailDefaultIdentityURL: "CLOSED_URL",
+	}
+
 	authState, err := auth.QueryAnyAuthd(c.ctx.nsqd.getOpts().AuthHTTPAddresses,
-		remoteIP, tlsEnabled, commonName, c.AuthSecret,
-		c.ctx.nsqd.getOpts().HTTPClientConnectTimeout,
-		c.ctx.nsqd.getOpts().HTTPClientRequestTimeout,
-		c.ctx.nsqd.getOpts().AuthFailClosed)
+		remoteIP, tlsEnabled, commonName, c.AuthSecret, &authConfig)
 	if err != nil {
 		return err
 	}
