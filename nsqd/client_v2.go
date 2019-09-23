@@ -571,9 +571,9 @@ func (c *clientV2) QueryAuthd() error {
 		ConnectTimeout:         c.ctx.nsqd.getOpts().HTTPClientConnectTimeout,
 		RequestTimeout:         c.ctx.nsqd.getOpts().HTTPClientRequestTimeout,
 		FailClosed:             c.ctx.nsqd.getOpts().AuthFailClosed,
-		FailDefaultTTL:         360,
-		FailDefaultIdentity:    "CLOSED",
-		FailDefaultIdentityURL: "CLOSED_URL",
+		FailDefaultTTL:         c.ctx.nsqd.getOpts().AuthFailDefaultTTL,
+		FailDefaultIdentity:    c.ctx.nsqd.getOpts().AuthFailDefaultIdentity,
+		FailDefaultIdentityURL: c.ctx.nsqd.getOpts().AuthFailDefaultIdentityURL,
 	}
 
 	authState, err := auth.QueryAnyAuthd(c.ctx.nsqd.getOpts().AuthHTTPAddresses,
